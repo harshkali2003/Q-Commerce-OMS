@@ -18,6 +18,8 @@
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.1.5",
     "morgan": "^1.10.1",
-    "nodemon": "^3.1.11"
+    "node-cron": "^4.2.1",
+    "nodemon": "^3.1.11",
+    "redis": "^5.10.0"
   }
 }

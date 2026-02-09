@@ -5,12 +5,12 @@ const inventorySchema = new mongoose.Schema({
         ref : "Batch",
         required : true,
     },
-    storeId : {
+    StoreId : {
         type : mongoose.Schema.Types.ObjectId,
         ref : "Store",
         required : true,
     },
-    skuId : {
+    SkuId : {
         type : mongoose.Schema.Types.ObjectId,
         ref : "Sku",
         required : true,
@@ -20,6 +20,10 @@ const inventorySchema = new mongoose.Schema({
         required : true,
         min : 0,
     },
-})
+    lowStock : {
+        type : Number,
+        default : 50,
+    }
+} , {timestamps : true})
 
 module.exports = mongoose.model("Inventory" , inventorySchema);
