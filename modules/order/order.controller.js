@@ -1,4 +1,5 @@
 const inventoryService = require("../../service/inventory.service");
+const deliverySlotSchema = require("../delivery/deliverySlot.schema");
 const inventorySchema = require("../inventory/inventory.schema");
 const skuSchema = require("../sku/sku.schema");
 const orderSchema = require("./order.schema");
@@ -104,8 +105,8 @@ exports.updateOrder = async (req, resp) => {
     }
 
     const allowedTransitions = {
-      CREATED: ["RESERVED"],
-      RESERVED: ["PICKED"],
+      CREATED: ["RESERVED", "CANCELLED"],
+      RESERVED: ["PICKED", "CANCELLED"],
       PICKED: ["PACKED"],
       PACKED: ["OUT"],
       OUT: ["DELIVERED"],
@@ -128,6 +129,55 @@ exports.updateOrder = async (req, resp) => {
     await order.save();
 
     resp.status(200).json({ message: "Order status updated", order });
+  } catch (err) {
+    console.log(err.message);
+    resp.status(500).json({ message: "Internal server error" });
+  }
+};
+
+exports.rollbackOrder = async (req, resp) => {
+  try {
+    const { orderId, reason } = req.body;
+    if (!reason) {
+      return resp
+        .status(400)
+        .json({ message: "Reason is required to cancel order" });
+    }
+    const order = await orderSchema.findOne({ orderId });
+    if (!order) {
+      return resp.status(404).json({ message: "Order not found" });
+    }
+
+    if (["CANCELLED", "FAILED"].includes(order.status)) {
+      return resp.status(200).json({
+        message: "Order already cancelled",
+      });
+    }
+
+    const previousStatus = order.status;
+
+    if (["RESERVED", "PICKED", "PACKED"].includes(previousStatus)) {
+      await inventoryService.ReleaseInventory(orderId);
+    }
+
+    order.status = "CANCELLED";
+    order.reason = reason;
+    order.rollBackAt = new Date();
+    await order.save();
+
+    if (
+      order.status === "CANCELLED" &&
+      ["RESERVED", "PICKED", "PACKED"].includes(previousStatus)
+    ) {
+      await deliverySlotSchema.findByIdAndUpdate(
+        order.slotId,
+        { $inc: { availableCapacity: 1 } },
+        { new: true },
+      );
+    }
+    resp
+      .status(200)
+      .json({ message: "Order cancelled , stock  & slot released" });
   } catch (err) {
     console.log(err.message);
     resp.status(500).json({ message: "Internal server error" });

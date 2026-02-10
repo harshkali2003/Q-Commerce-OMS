@@ -11,6 +11,27 @@ const storeData = new mongoose.Schema(
       required: true,
       index: true,
     },
+    storePriority: {
+      type: Number,
+      default: 1,
+      index: 1,
+    },
+    deliverableRadius: {
+      type: Number,
+      default: 1,
+      required: true,
+    },
+    location: {
+      type: {
+        type: String,
+        enum: ["Point"],
+        default: "Point",
+      },
+      coordinates: {
+        type: [Number],
+        required: true,
+      },
+    },
     isActive: {
       type: Boolean,
       default: true,
@@ -23,5 +44,7 @@ const storeData = new mongoose.Schema(
   },
   { timestamps: true },
 );
+
+storeData.index({ location: "2dsphere" });
 
 module.exports = mongoose.model("Store", storeData);

@@ -1,5 +1,6 @@
 const Store = require("./store.schema");
 const User = require("../user/user.schema");
+const Inventory = require("../inventory/inventory.schema");
 
 exports.CreateStore = async (req, resp) => {
   try {
@@ -131,20 +132,79 @@ exports.DeActivateStore = async (req, resp) => {
   }
 };
 
-exports.getStoreByPincode = async (req , resp) => {
-  try{
-    const {pincode} = req.query;
+exports.getStoreByPincode = async (req, resp) => {
+  try {
+    const { pincode } = req.query;
     const data = await Store.findOne({
-      pincodes : pincode,
-      isActive : true
-    })
+      pincodes: pincode,
+      isActive: true,
+    });
 
-    if(!data){
-      return resp.status(404).json({message : "Service not available at your location"})
+    if (!data) {
+      return resp
+        .status(404)
+        .json({ message: "Service not available at your location" });
     }
 
-    resp.status(200).json({message : "success" , data})
-  } catch(err){
+    resp.status(200).json({ message: "success", data });
+  } catch (err) {
     console.log(err);
   }
-}
+};
+
+exports.AllocateStore = async (req, resp) => {
+  try {
+    const { pincode, items } = req.body;
+    if (!pincode || items.length < 1) {
+      return resp.status(400).json({ message: "All fields are required" });
+    }
+
+    const stores = await Store.find({
+      isActive: true,
+      pincodes: { $in: [pincode] },
+    }).sort({ storePriority: 1 });
+
+    if (stores.length < 1) {
+      return (resp.status(404), json({ message: "No Store is serviceable" }));
+    }
+
+    let selectedStore = null;
+
+    for (const store of stores) {
+      let isEligibleStore = true;
+      for (const item of items) {
+        const { skuId, quantity } = item;
+        const inventory = await Inventory.findOne({
+          StoreId: store._id,
+          SkuId: skuId,
+        });
+
+        if (!inventory || inventory.quantity < quantity) {
+          isEligibleStore = false;
+          break;
+        }
+
+        if (isEligibleStore) {
+          selectedStore = store;
+          break;
+        }
+
+        if (!selectedStore) {
+          return resp.status(400).json({
+            message: "No store has sufficient inventory for all items",
+          });
+        }
+      }
+    }
+
+    resp.status(200).json({
+      storeId: selectedStore._id,
+      storeName: selectedStore.name,
+      allocationType: "FULL",
+      strategy: "PINCODE_PRIORITY_WITH_FALLBACK",
+    });
+  } catch (error) {
+    console.log(error);
+    resp.status(500).json({ message: "Internal server error" });
+  }
+};
