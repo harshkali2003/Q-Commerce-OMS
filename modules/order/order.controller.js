@@ -3,6 +3,7 @@ const deliverySlotSchema = require("../delivery/deliverySlot.schema");
 const inventorySchema = require("../inventory/inventory.schema");
 const skuSchema = require("../sku/sku.schema");
 const orderSchema = require("./order.schema");
+const auditService = require("../../service/audit.service");
 
 exports.placeOrder = async (req, resp) => {
   const { orderId, skuId, quantity } = req.body;
@@ -98,7 +99,7 @@ exports.CreateOrder = async (req, resp) => {
 exports.updateOrder = async (req, resp) => {
   try {
     const { orderId } = req.params;
-    const { status } = req.body;
+    const { status , reason } = req.body;
 
     if (!status) {
       return resp.status(400).json({ message: "Status is required" });
@@ -125,12 +126,26 @@ exports.updateOrder = async (req, resp) => {
       return resp.status(400).json({ message: "Invalid status transition" });
     }
 
+    const oldStatus = order.status;
+
     order.status = status;
     await order.save();
 
+    auditService.recordAudit({
+      action: "ORDER_STATUS_UPDATED",
+      entityType: "ORDER",
+      entityId: orderId,
+      performedBy: "USER",
+      performedById: req.user?.userId,
+      oldValue: { oldStatus },
+      newValue: { status },
+      reason,
+      ipAddress: req.ip,
+      requestId: req.requestId,
+    });
+
     resp.status(200).json({ message: "Order status updated", order });
   } catch (err) {
-    console.log(err.message);
     resp.status(500).json({ message: "Internal server error" });
   }
 };
@@ -178,6 +193,42 @@ exports.rollbackOrder = async (req, resp) => {
     resp
       .status(200)
       .json({ message: "Order cancelled , stock  & slot released" });
+  } catch (err) {
+    console.log(err.message);
+    resp.status(500).json({ message: "Internal server error" });
+  }
+};
+
+exports.getPickingList = async (req, resp) => {
+  try {
+    const data = await orderSchema.aggregate([
+      {
+        $match: { status: "RESERVED" },
+      },
+      {
+        $unwind: "$items",
+      },
+      {
+        $group: {
+          _id: "$items.sku",
+          totalQuantity: { $sum: "$items.quantity" },
+          orders: { $addToSet: "$orderId" },
+        },
+      },
+      {
+        $project: {
+          sku: "$_id",
+          totalQuantity: 1,
+          orders: 1,
+          _id: 0,
+        },
+      },
+      {
+        $sort: { createdAt: 1 },
+      },
+    ]);
+
+    resp.status(200).json({ message: "Picking list generated", data });
   } catch (err) {
     console.log(err.message);
     resp.status(500).json({ message: "Internal server error" });
