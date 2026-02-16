@@ -1,5 +1,4 @@
 const cron = require("node-cron");
-const mongoose = require("mongoose");
 
 const productSchema = require("../modules/product/product.schema");
 
