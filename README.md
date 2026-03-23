@@ -1,75 +1,142 @@
-![Node.js](https://img.shields.io/badge/Node.js-Backend-green)
-![Redis](https://img.shields.io/badge/Redis-Inventory%20Locking-red)
-![MongoDB](https://img.shields.io/badge/MongoDB-Database-brightgreen)
+# 🚀 Q-Commerce Order Management System (OMS)
 
-
-# Q-Commerce OMS 🛒
-
-A scalable **Order Management System (OMS)** built with **Node.js** designed for real-world e-commerce workflows — including cart validation, inventory reservation, store assignment, and reliable order placement.
-
-This project goes beyond CRUD and focuses on **state orchestration**, **consistency**, and **failure-resilient flows** required in production-grade backend systems.
+A production-oriented **Order Management System (OMS)** built for quick-commerce platforms, focusing on **performance optimization, clean architecture, and scalable backend design**.
 
 ---
 
-## 🔍 Overview
+## 📌 Overview
 
-In an e-commerce platform, the OMS is responsible for:
-- Validating cart contents
-- Assigning a serviceable store based on pincode
-- Reserving inventory safely using Redis locks
-- Creating and managing orders with strong consistency guarantees
+This system manages the complete lifecycle of orders — from creation to retrieval — while optimizing performance using **Redis caching** and maintaining a structured backend architecture.
 
-An Order Management System (OMS) is a core backend component used for receiving, processing, and tracking customer orders in commerce applications.
+It simulates real-world backend systems used in platforms like Blinkit, Zepto, and Amazon.
 
 ---
 
-## 🛠 Key Features
+## 🏗️ Architecture
 
-✔ Cart validation and consistency  
-✔ Store assignment based on serviceable pincode  
-✔ Inventory reservation using **Redis (TTL-based locks)**  
-✔ Order creation with SKU-level validation  
-✔ Clear separation of inventory states:
-  - **Reserve**
-  - **Confirm**
-  - **Release**
+The project follows a **layered + modular hybrid architecture**:
 
-## 📁 Project Structure
+* **Modules Layer** → Handles domain-specific logic (e.g., orders)
+* **Service Layer** → Centralized business logic and reusable operations
+* **Middleware Layer** → Authentication, error handling, request processing
+* **Utility Layer** → Helper functions and reusable utilities
+* **Logger Layer** → Centralized logging system
 
-Q-Commerce-OMS
-├── config/ # environment & config files
-├── middleware/ # custom express middlewares
-├── modules/ # domain logic (cart, order, inventory, store)
-├── service/ # service layer (Redis, store allocator)
-├── utils/ # helpers & utilities
-├── index.js # app entrypoint
-├── package.json
+This structure ensures:
 
-## 🚀 Installation
+* Separation of concerns
+* Code reusability
+* Maintainability
 
-1. Clone the repository
+---
 
-```bash
-git clone https://github.com/harshkali2003/Q-Commerce-OMS.git
-cd Q-Commerce-OMS
+## ⚙️ Tech Stack
 
-2. Install dependencies
---- npm install
+* **Backend:** Node.js, Express.js
+* **Database:** MongoDB
+* **Caching:** Redis
+* **Authentication:** JWT
 
-3. Configure environment variables
+---
 
-Create a .env file:
-PORT=5000
-MONGO_URI=your_mongodb_uri
-REDIS_URL=your_redis_url
+## 🔥 Key Features
 
-4. start the server
--- node index.js
+* Order creation and management
+* Redis-based caching for faster data retrieval
+* Centralized service layer for business logic
+* Middleware-based request handling
+* Structured logging system
+* Clean and maintainable project structure
 
-## 🛠 Tech Stack
+---
 
-- Node.js
-- Express.js
-- MongoDB
-- Redis
-- REST APIs
+## ⚡ Redis Integration (Performance Optimization)
+
+Redis is used to enhance system performance by:
+
+* Caching frequently accessed order data
+* Reducing MongoDB query load
+* Improving API response times
+
+### Flow:
+
+Order Request → Check Redis
+
+* Cache Hit → Return response instantly
+* Cache Miss → Fetch from DB → Store in Redis → Return
+
+---
+
+## 🔄 Order Flow
+
+1. Client sends order request
+2. Request passes through middleware
+3. Business logic handled in service layer
+4. Data stored in MongoDB
+5. Frequently accessed data cached in Redis
+6. Response returned to client
+
+---
+
+## 📂 Project Structure
+
+config/        → Environment & DB configuration  
+logger/        → Logging system  
+middleware/    → Custom middlewares  
+modules/       → Feature-based modules (e.g., orders)  
+service/       → Central business logic layer  
+utils/         → Helper functions  
+
+index.js       → Application entry point  
+```
+
+---
+
+## 📡 API Endpoints (Sample)
+
+* `POST /orders/create` → Create new order
+* `GET /orders/:id` → Get order by ID
+* `GET /orders` → Get all orders
+
+---
+
+## 🧠 Engineering Decisions
+
+### Why Redis?
+
+To reduce latency and improve performance for frequently accessed order data.
+
+### Why separate service layer?
+
+To centralize business logic and promote reusability across modules.
+
+### Why logging layer?
+
+To track application behavior and simplify debugging.
+
+---
+
+## 🚀 Future Improvements
+
+* Introduce message queues (BullMQ / Kafka) for async processing
+* Implement microservices architecture
+* Add rate limiting and API throttling
+* Enhance caching strategies (TTL, invalidation)
+
+---
+
+## 🏁 Conclusion
+
+This project demonstrates strong backend engineering concepts including:
+
+* API design
+* Performance optimization using Redis
+* Layered architecture
+* Real-world system thinking
+
+---
+
+## 👨‍💻 Author
+
+Harsh Vardhan
+Backend Developer | MERN Stack | System Design Enthusiast
